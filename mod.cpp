@@ -68,6 +68,7 @@ class PyBind11Module : public maiken::Module {
     if (!PYTHON.empty()) PY = PYTHON;
 #if defined(_WIN32)
     if(PY.rfind(".exe") == std::string::npos) PY += ".exe";
+    // return;
 #endif
     kul::Process p(PY);
     kul::ProcessCapture pc(p);
@@ -85,19 +86,23 @@ class PyBind11Module : public maiken::Module {
       kul::env::SET(path_var->name(), path_var->toString().c_str());
       p.var(path_var->name(), path_var->toString());
     };
+#if defined(_WIN32)
+    pyconfig_found = false; // doesn't exist on windows
+#else
     pyconfig_found = kul::env::WHICH(PY3_CONFIG.c_str());
+#endif
     if(!pyconfig_found) {
       pyconfig_found = kul::env::WHICH(PY_CONFIG.c_str());
       PY3_CONFIG = PY_CONFIG;
     }
     try {
+      p << "-c" << "\"import sys; print(sys.version_info[0])\"";
+      p.start();
+
       if(!pyconfig_found && config_expected){
         finally = 1;
         KEXCEPT(kul::Exception, "python-config does not exist on path");
       }
-      p << "-c"
-        << "\"import sys; print(sys.version_info[0])\"";
-      p.start();
     } catch (const kul::Exception& e) {
       KERR << e.stack();
     } catch (const std::exception& e) {
@@ -105,6 +110,9 @@ class PyBind11Module : public maiken::Module {
     } catch (...) {
       KERR << "UNKNOWN ERROR CAUGHT";
     }
+    if(finally) exit(2);
+    using namespace kul::cli;
+    auto &evs = a.envVars();
     if(pyconfig_found) {
       kul::os::PushDir pushd(a.project().dir());
       kul::Process p(PY3_CONFIG);
@@ -113,17 +121,23 @@ class PyBind11Module : public maiken::Module {
       if (path_var) p.var(path_var->name(), path_var->toString());
       p.start();
       std::string extension(pc.outs());
-      using namespace kul::cli;
-      auto &evs = a.envVars();
       std::vector<std::string> replace = {"MKN_LIB_EXT", "MKN_LIB_PRE"};
       for(const auto &s : replace)
         evs.erase(std::remove_if(evs.begin(), evs.end(),
-                           [](const EnvVar &ev) { return ev.name() == "s"; }), evs.end());
+            [&](const EnvVar &ev) { return s.compare(ev.name()) == 0; }), evs.end());
       evs.push_back(EnvVar("MKN_LIB_EXT", extension, EnvVarMode::REPL));
       evs.push_back(EnvVar("MKN_LIB_PRE", "", EnvVarMode::REPL));
-    }else KEXCEPT(kul::Exception, "python-config3 not found");
+    } else {
+      kul::Process p(PY);
+      kul::ProcessCapture pc(p);
+      p << "-c" << "\"from distutils import sysconfig; print(sysconfig.get_config_var('SO'))\"";
+      p.start();
+      std::string extension(pc.outs());
+      evs.push_back(EnvVar("MKN_LIB_EXT", extension, EnvVarMode::REPL));
+      evs.push_back(EnvVar("MKN_LIB_PRE", "", EnvVarMode::REPL));
+    }
+    for(const auto &ev : evs) KLOG(INF) << ev.toString();
 
-    if(finally) exit(2);
   }
 
 };
