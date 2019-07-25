@@ -125,7 +125,7 @@ class PyBind11Module : public maiken::Module {
     } else {
       kul::Process p(PY);
       kul::ProcessCapture pc(p);
-      p << "-c" << "\"from distutils import sysconfig; print(sysconfig.get_config_var('SO'))\"";
+      p << "-c" << "\"import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))\"";
       p.start();
       std::string extension(pc.outs());
       evs.push_back(EnvVar("MKN_LIB_EXT", extension, EnvVarMode::REPL));
