@@ -131,8 +131,6 @@ class PyBind11Module : public maiken::Module {
       evs.push_back(EnvVar("MKN_LIB_EXT", extension, EnvVarMode::REPL));
       evs.push_back(EnvVar("MKN_LIB_PRE", "", EnvVarMode::REPL));
     }
-    for(const auto &ev : evs) KLOG(INF) << ev.toString();
-
   }
 
 };
