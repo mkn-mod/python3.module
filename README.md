@@ -2,6 +2,8 @@
 
 ** python3 pybind11 maiken module **
 
+[![Travis](https://travis-ci.org/mkn-mod/lang.pybind11.svg?branch=master)](https://travis-ci.org/mkn-mod/lang.pybind11)
+
 Link phase module
 
 ## Prerequisites
