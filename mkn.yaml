@@ -8,27 +8,18 @@ property:
 parent: base
 src: mod.cpp
 mode: shared
-if_arg:
-    win_shared: -DYAML_CPP_DLL
-    shared: -DKUL_SHARED
 
 profile:
-  - name: base
-    dep:
-      - name: mkn
-        profile: mod
-        local: ${maiken_location}
-        scm: ${maiken_scm}
-
-  - name: test
-    parent: base
-    main: test.cpp
-    if_arg:
+- name: base
+  dep: mkn&${maiken_location}(${maiken_scm})[mod]
+  if_arg:
       win_shared: -DYAML_CPP_DLL
+      shared: -DKUL_SHARED
 
-  - name: format
-    mod:
-    - name: clang.format
-      init:
-        style: google
-        paths: .
+- name: test
+  parent: base
+  main: test.cpp
+
+- name: format
+  mod: |
+    clang.format{init:{style: google, paths: .}}
