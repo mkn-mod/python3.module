@@ -108,6 +108,7 @@ class PyBind11Module : public maiken::Module {
     if(finally) exit(2);
     using namespace kul::cli;
     auto &evs = a.envVars();
+    std::string extension;
     if(pyconfig_found) {
       kul::os::PushDir pushd(a.project().dir());
       kul::Process p(PY3_CONFIG);
@@ -115,22 +116,16 @@ class PyBind11Module : public maiken::Module {
       p << "--extension-suffix";
       if (path_var) p.var(path_var->name(), path_var->toString());
       p.start();
-      std::string extension(pc.outs());
-      std::vector<std::string> replace = {"MKN_LIB_EXT", "MKN_LIB_PRE"};
-      for(const auto &s : replace)
-        evs.erase(std::remove_if(evs.begin(), evs.end(),
-            [&](const EnvVar &ev) { return s.compare(ev.name()) == 0; }), evs.end());
-      evs.push_back(EnvVar("MKN_LIB_EXT", extension, EnvVarMode::REPL));
-      evs.push_back(EnvVar("MKN_LIB_PRE", "", EnvVarMode::REPL));
+      extension = pc.outs();
     } else {
       kul::Process p(PY);
       kul::ProcessCapture pc(p);
       p << "-c" << "\"import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))\"";
       p.start();
-      std::string extension(pc.outs());
-      evs.push_back(EnvVar("MKN_LIB_EXT", extension, EnvVarMode::REPL));
-      evs.push_back(EnvVar("MKN_LIB_PRE", "", EnvVarMode::REPL));
+      extension = pc.outs();
     }
+    a.m_cInfo.lib_ext = kul::String::LINES(extension)[0]; // drop EOL
+    a.m_cInfo.lib_prefix = "";
   }
 
 };
