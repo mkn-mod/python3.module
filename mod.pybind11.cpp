@@ -126,6 +126,7 @@ class PyBind11Module : public maiken::Module {
     }
     a.m_cInfo.lib_ext = kul::String::LINES(extension)[0]; // drop EOL
     a.m_cInfo.lib_prefix = "";
+    a.mode(maiken::compiler::Mode::SHAR);
   }
 
 };

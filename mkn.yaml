@@ -6,7 +6,7 @@ property:
     maiken_scm: https://github.com/mkn/mkn
 
 parent: base
-src: mod.cpp
+src: mod.pybind11.cpp
 mode: shared
 
 profile:
