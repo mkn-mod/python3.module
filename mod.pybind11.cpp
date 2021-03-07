@@ -28,8 +28,8 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include "maiken/module/init.hpp"
 #include <unordered_set>
+#include "maiken/module/init.hpp"
 
 namespace mkn {
 namespace lang {
@@ -42,9 +42,8 @@ class PyBind11Module : public maiken::Module {
   const bool config_expected = 1;
 #endif
   bool pyconfig_found = 0;
-  std::string HOME, PY = "python3", PYTHON,
-              PY_CONFIG = "python-config", PY3_CONFIG = "python3-config",
-              PATH = kul::env::GET("PATH");
+  std::string HOME, PY = "python3", PYTHON, PY_CONFIG = "python-config",
+                    PY3_CONFIG = "python3-config", PATH = kul::env::GET("PATH");
   kul::Dir bin;
   std::shared_ptr<kul::cli::EnvVar> path_var;
 
@@ -58,12 +57,11 @@ class PyBind11Module : public maiken::Module {
   void init(maiken::Application& a, const YAML::Node& node)
       KTHROW(std::exception) override {
     bool finally = 0;
-    if(!kul::env::WHICH(PY.c_str())) PY = "python";
+    if (!kul::env::WHICH(PY.c_str())) PY = "python";
     PYTHON = kul::env::GET("PYTHON");
     if (!PYTHON.empty()) PY = PYTHON;
 #if defined(_WIN32)
-    if(PY.rfind(".exe") == std::string::npos) PY += ".exe";
-    // return;
+    if (PY.rfind(".exe") == std::string::npos) PY += ".exe";
 #endif
     kul::Process p(PY);
     kul::ProcessCapture pc(p);
@@ -82,19 +80,20 @@ class PyBind11Module : public maiken::Module {
       p.var(path_var->name(), path_var->toString());
     };
 #if defined(_WIN32)
-    pyconfig_found = false; // doesn't exist on windows
+    pyconfig_found = false;  // doesn't exist on windows (generally)
 #else
     pyconfig_found = kul::env::WHICH(PY3_CONFIG.c_str());
 #endif
-    if(!pyconfig_found) {
+    if (!pyconfig_found) {
       pyconfig_found = kul::env::WHICH(PY_CONFIG.c_str());
       PY3_CONFIG = PY_CONFIG;
     }
     try {
-      p << "-c" << "\"import sys; print(sys.version_info[0])\"";
+      p << "-c"
+        << "\"import sys; print(sys.version_info[0])\"";
       p.start();
 
-      if(!pyconfig_found && config_expected){
+      if (!pyconfig_found && config_expected) {
         finally = 1;
         KEXCEPT(kul::Exception, "python-config does not exist on path");
       }
@@ -105,11 +104,11 @@ class PyBind11Module : public maiken::Module {
     } catch (...) {
       KERR << "UNKNOWN ERROR CAUGHT";
     }
-    if(finally) exit(2);
+    if (finally) exit(2);
     using namespace kul::cli;
-    auto &evs = a.envVars();
+    auto& evs = a.envVars();
     std::string extension;
-    if(pyconfig_found) {
+    if (pyconfig_found) {
       kul::os::PushDir pushd(a.project().dir());
       kul::Process p(PY3_CONFIG);
       kul::ProcessCapture pc(p);
@@ -120,15 +119,16 @@ class PyBind11Module : public maiken::Module {
     } else {
       kul::Process p(PY);
       kul::ProcessCapture pc(p);
-      p << "-c" << "\"import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))\"";
+      p << "-c"
+        << "\"import sysconfig; "
+           "print(sysconfig.get_config_var('EXT_SUFFIX'))\"";
       p.start();
       extension = pc.outs();
     }
-    a.m_cInfo.lib_ext = kul::String::LINES(extension)[0]; // drop EOL
+    a.m_cInfo.lib_ext = kul::String::LINES(extension)[0];  // drop EOL
     a.m_cInfo.lib_prefix = "";
     a.mode(maiken::compiler::Mode::SHAR);
   }
-
 };
 }  // namespace lang
 }  // namespace mkn

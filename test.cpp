@@ -1,8 +1,8 @@
 
 
+#include <maiken.hpp>
 #include "kul/signal.hpp"
 #include "kul/yaml.hpp"
-#include <maiken.hpp>
 
 const std::string yArgs = "";
 
@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
     loader->module()->link(*app, node);
     loader->module()->pack(*app, node);
     loader->unload();
-    for(const auto inc : app->includes()) KLOG(INF) << inc.first;
+    for (const auto inc : app->includes()) KLOG(INF) << inc.first;
   } catch (const kul::Exception& e) {
     KLOG(ERR) << e.what();
     return 2;
