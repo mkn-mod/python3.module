@@ -43,49 +43,49 @@ class PyBind11Module : public maiken::Module {
 #endif
   bool pyconfig_found = 0;
   std::string HOME, PY = "python3", PYTHON, PY_CONFIG = "python-config",
-                    PY3_CONFIG = "python3-config", PATH = kul::env::GET("PATH");
-  kul::Dir bin;
+                    PY3_CONFIG = "python3-config", PATH = mkn::kul::env::GET("PATH");
+  mkn::kul::Dir bin;
   std::shared_ptr<kul::cli::EnvVar> path_var;
 
  protected:
-  static void VALIDATE_NODE(const YAML::Node& node) {
-    using namespace kul::yaml;
+  static void VALIDATE_NODE(YAML::Node const& node) {
+    using namespace mkn::kul::yaml;
     Validator({NodeValidator("args")}).validate(node);
   }
 
  public:
-  void init(maiken::Application& a, const YAML::Node& node)
+  void init(maiken::Application& a, YAML::Node const& node)
       KTHROW(std::exception) override {
     bool finally = 0;
     if (!kul::env::WHICH(PY.c_str())) PY = "python";
-    PYTHON = kul::env::GET("PYTHON");
+    PYTHON = mkn::kul::env::GET("PYTHON");
     if (!PYTHON.empty()) PY = PYTHON;
 #if defined(_WIN32)
     if (PY.rfind(".exe") == std::string::npos) PY += ".exe";
 #endif
-    kul::Process p(PY);
-    kul::ProcessCapture pc(p);
-    HOME = kul::env::GET("PYTHON3_HOME");
+    mkn::kul::Process p(PY);
+    mkn::kul::ProcessCapture pc(p);
+    HOME = mkn::kul::env::GET("PYTHON3_HOME");
     if (!HOME.empty()) {
 #if defined(_WIN32)
-      bin = kul::Dir(HOME);
+      bin = mkn::kul::Dir(HOME);
       if (!bin) KEXCEPT(kul::Exception, "$PYTHON3_HOME does not exist");
 #else
-      bin = kul::Dir("bin", HOME);
+      bin = mkn::kul::Dir("bin", HOME);
       if (!bin) KEXCEPT(kul::Exception, "$PYTHON3_HOME/bin does not exist");
 #endif
       path_var = std::make_shared<kul::cli::EnvVar>("PATH", bin.real(),
-                                                    kul::cli::EnvVarMode::PREP);
-      kul::env::SET(path_var->name(), path_var->toString().c_str());
+                                                    mkn::kul::cli::EnvVarMode::PREP);
+      mkn::kul::env::SET(path_var->name(), path_var->toString().c_str());
       p.var(path_var->name(), path_var->toString());
     };
 #if defined(_WIN32)
     pyconfig_found = false;  // doesn't exist on windows (generally)
 #else
-    pyconfig_found = kul::env::WHICH(PY3_CONFIG.c_str());
+    pyconfig_found = mkn::kul::env::WHICH(PY3_CONFIG.c_str());
 #endif
     if (!pyconfig_found) {
-      pyconfig_found = kul::env::WHICH(PY_CONFIG.c_str());
+      pyconfig_found = mkn::kul::env::WHICH(PY_CONFIG.c_str());
       PY3_CONFIG = PY_CONFIG;
     }
     try {
@@ -97,7 +97,7 @@ class PyBind11Module : public maiken::Module {
         finally = 1;
         KEXCEPT(kul::Exception, "python-config does not exist on path");
       }
-    } catch (const kul::Exception& e) {
+    } catch (const mkn::kul::Exception& e) {
       KERR << e.stack();
     } catch (const std::exception& e) {
       KERR << e.what();
@@ -105,27 +105,27 @@ class PyBind11Module : public maiken::Module {
       KERR << "UNKNOWN ERROR CAUGHT";
     }
     if (finally) exit(2);
-    using namespace kul::cli;
+    using namespace mkn::kul::cli;
     auto& evs = a.envVars();
     std::string extension;
     if (pyconfig_found) {
-      kul::os::PushDir pushd(a.project().dir());
-      kul::Process p(PY3_CONFIG);
-      kul::ProcessCapture pc(p);
+      mkn::kul::os::PushDir pushd(a.project().dir());
+      mkn::kul::Process p(PY3_CONFIG);
+      mkn::kul::ProcessCapture pc(p);
       p << "--extension-suffix";
       if (path_var) p.var(path_var->name(), path_var->toString());
       p.start();
       extension = pc.outs();
     } else {
-      kul::Process p(PY);
-      kul::ProcessCapture pc(p);
+      mkn::kul::Process p(PY);
+      mkn::kul::ProcessCapture pc(p);
       p << "-c"
         << "\"import sysconfig; "
            "print(sysconfig.get_config_var('EXT_SUFFIX'))\"";
       p.start();
       extension = pc.outs();
     }
-    a.m_cInfo.lib_ext = kul::String::LINES(extension)[0];  // drop EOL
+    a.m_cInfo.lib_ext = mkn::kul::String::LINES(extension)[0];  // drop EOL
     a.m_cInfo.lib_prefix = "";
     a.mode(maiken::compiler::Mode::SHAR);
   }
