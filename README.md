@@ -1,19 +1,19 @@
-# lang.pybind11
+# python3.module
 
-** python3 pybind11 maiken module **
+** python3 maiken module **
 
-[![Travis](https://travis-ci.org/mkn-mod/lang.pybind11.svg?branch=master)](https://travis-ci.org/mkn-mod/lang.pybind11)
+Make a python3 module from your code
 
 Link phase module
 
 ## Prerequisites
-  [maiken](https://github.com/Dekken/maiken)
+  [maiken](https://github.com/mkn/mkn)
 
 ## Usage
 
 ```yaml
 mod:
-- name: lang.pybind11
+- name: python3.module
 
 ```
 
