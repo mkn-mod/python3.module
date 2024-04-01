@@ -1,12 +1,12 @@
 
-name: lang.pybind11
+name: python3.module
 version: master
 property:
     maiken_location: ${MKN_HOME}/app/mkn/${version}
     maiken_scm: https://github.com/mkn/mkn
 
 parent: base
-src: mod.pybind11.cpp
+src: mod.cpp
 mode: shared
 
 profile:
