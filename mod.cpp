@@ -45,20 +45,18 @@ class ModuleMaker : public maiken::Module {
 #endif
   bool pyconfig_found = 0;
   std::string HOME, PY = "python3", PYTHON, PY_CONFIG = "python-config",
-                    PY3_CONFIG = "python3-config",
-                    PATH = mkn::kul::env::GET("PATH");
+                    PY3_CONFIG = "python3-config", PATH = mkn::kul::env::GET("PATH");
   mkn::kul::Dir bin;
   std::shared_ptr<kul::cli::EnvVar> path_var;
 
  protected:
-  static void VALIDATE_NODE(YAML::Node const &node) {
+  static void VALIDATE_NODE(YAML::Node const& node) {
     using namespace mkn::kul::yaml;
     Validator({NodeValidator("args")}).validate(node);
   }
 
  public:
-  void init(maiken::Application &a, YAML::Node const & /*node*/)
-      KTHROW(std::exception) override {
+  void init(maiken::Application& a, YAML::Node const& /*node*/) KTHROW(std::exception) override {
     bool finally = 0;
     if (!kul::env::WHICH(PY.c_str())) PY = "python";
     PYTHON = mkn::kul::env::GET("PYTHON");
@@ -77,8 +75,8 @@ class ModuleMaker : public maiken::Module {
       bin = mkn::kul::Dir("bin", HOME);
       if (!bin) KEXCEPT(kul::Exception, "$PYTHON3_HOME/bin does not exist");
 #endif
-      path_var = std::make_shared<kul::cli::EnvVar>(
-          "PATH", bin.real(), mkn::kul::cli::EnvVarMode::PREP);
+      path_var =
+          std::make_shared<kul::cli::EnvVar>("PATH", bin.real(), mkn::kul::cli::EnvVarMode::PREP);
       mkn::kul::env::SET(path_var->name(), path_var->toString().c_str());
       p.var(path_var->name(), path_var->toString());
     };
@@ -100,9 +98,9 @@ class ModuleMaker : public maiken::Module {
         finally = 1;
         KEXCEPT(kul::Exception, "python-config does not exist on path");
       }
-    } catch (const mkn::kul::Exception &e) {
+    } catch (mkn::kul::Exception const& e) {
       KERR << e.stack();
-    } catch (const std::exception &e) {
+    } catch (std::exception const& e) {
       KERR << e.what();
     } catch (...) {
       KERR << "UNKNOWN ERROR CAUGHT";
@@ -136,10 +134,8 @@ class ModuleMaker : public maiken::Module {
 }  // namespace python3
 }  // namespace mkn
 
-extern "C" KUL_PUBLISH maiken::Module *maiken_module_construct() {
+extern "C" MKN_KUL_PUBLISH maiken::Module* maiken_module_construct() {
   return new mkn::python3::ModuleMaker;
 }
 
-extern "C" KUL_PUBLISH void maiken_module_destruct(maiken::Module *p) {
-  delete p;
-}
+extern "C" MKN_KUL_PUBLISH void maiken_module_destruct(maiken::Module* p) { delete p; }
