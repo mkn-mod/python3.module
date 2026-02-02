@@ -28,36 +28,35 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include <cstdint>
-#include <unordered_set>
+#include "maiken/module/init.hpp"  // IWYU pragma: keep
 
-#include "maiken/module/init.hpp"
+#include "maiken/app.hpp"       // for Application
+#include "maiken/compiler.hpp"  // for CompilationInfo, Mode
+
+#include "mkn/kul/os.hpp"      // for Dir, WHICH, PushDir
+#include "mkn/kul/cli.hpp"     // for EnvVar, EnvVarMode
+#include "mkn/kul/env.hpp"     // for GET, SET
+#include "mkn/kul/defs.hpp"    // for MKN_KUL_PUBLISH
+#include "mkn/kul/proc.hpp"    // for Process, ProcessCapture, AProcess
+#include "maiken/project.hpp"  // for Project
+#include "mkn/kul/except.hpp"  // for Exception, KEXCEPT, KTHROW
+#include "mkn/kul/string.hpp"  // for String
+
+#include <memory>    // for shared_ptr, make_shared
+#include <string>    // for basic_string, string
+#include <vector>    // for vector
+#include <stdlib.h>  // for exit
+
+namespace YAML {
+class Node;
+}
 
 namespace mkn {
 namespace python3 {
 
 class ModuleMaker : public maiken::Module {
- private:
-#if defined(_WIN32)
-  const bool config_expected = 0;
-#else
-  const bool config_expected = 1;
-#endif
-  bool pyconfig_found = 0;
-  std::string HOME, PY = "python3", PYTHON, PY_CONFIG = "python-config",
-                    PY3_CONFIG = "python3-config", PATH = mkn::kul::env::GET("PATH");
-  mkn::kul::Dir bin;
-  std::shared_ptr<kul::cli::EnvVar> path_var;
-
- protected:
-  static void VALIDATE_NODE(YAML::Node const& node) {
-    using namespace mkn::kul::yaml;
-    Validator({NodeValidator("args")}).validate(node);
-  }
-
  public:
   void init(maiken::Application& a, YAML::Node const& /*node*/) KTHROW(std::exception) override {
-    bool finally = 0;
     if (!kul::env::WHICH(PY.c_str())) PY = "python";
     PYTHON = mkn::kul::env::GET("PYTHON");
     if (!PYTHON.empty()) PY = PYTHON;
@@ -80,56 +79,28 @@ class ModuleMaker : public maiken::Module {
       mkn::kul::env::SET(path_var->name(), path_var->toString().c_str());
       p.var(path_var->name(), path_var->toString());
     };
-#if defined(_WIN32)
-    pyconfig_found = false;  // doesn't exist on windows (generally)
-#else
-    pyconfig_found = mkn::kul::env::WHICH(PY3_CONFIG.c_str());
-#endif
-    if (!pyconfig_found) {
-      pyconfig_found = mkn::kul::env::WHICH(PY_CONFIG.c_str());
-      PY3_CONFIG = PY_CONFIG;
-    }
-    try {
-      p << "-c"
-        << "\"import sys; print(sys.version_info[0])\"";
-      p.start();
 
-      if (!pyconfig_found && config_expected) {
-        finally = 1;
-        KEXCEPT(kul::Exception, "python-config does not exist on path");
-      }
-    } catch (mkn::kul::Exception const& e) {
-      KERR << e.stack();
-    } catch (std::exception const& e) {
-      KERR << e.what();
-    } catch (...) {
-      KERR << "UNKNOWN ERROR CAUGHT";
-    }
-    if (finally) exit(2);
-    using namespace mkn::kul::cli;
+    auto const extension =
+        pyexec_for_string("\"import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))\"");
 
-    std::string extension;
-    if (pyconfig_found) {
-      mkn::kul::os::PushDir pushd(a.project().dir());
-      mkn::kul::Process p(PY3_CONFIG);
-      mkn::kul::ProcessCapture pc(p);
-      p << "--extension-suffix";
-      if (path_var) p.var(path_var->name(), path_var->toString());
-      p.start();
-      extension = pc.outs();
-    } else {
-      mkn::kul::Process p(PY);
-      mkn::kul::ProcessCapture pc(p);
-      p << "-c"
-        << "\"import sysconfig; "
-           "print(sysconfig.get_config_var('EXT_SUFFIX'))\"";
-      p.start();
-      extension = pc.outs();
-    }
     a.m_cInfo.lib_ext = mkn::kul::String::LINES(extension)[0];  // drop EOL
     a.m_cInfo.lib_prefix = "";
     a.mode(maiken::compiler::Mode::SHAR);
   }
+
+ private:
+  std::string pyexec_for_string(std::string const& cmd) {
+    mkn::kul::Process p(PY);
+    mkn::kul::ProcessCapture pc(p);
+    p << "-c" << cmd;
+    p.start();
+    return pc.outs();
+  }
+
+  std::string HOME, PY = "python3", PYTHON, PY_CONFIG = "python-config",
+                    PY3_CONFIG = "python3-config", PATH = mkn::kul::env::GET("PATH");
+  mkn::kul::Dir bin;
+  std::shared_ptr<kul::cli::EnvVar> path_var;
 };
 }  // namespace python3
 }  // namespace mkn
