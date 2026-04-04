@@ -21,6 +21,13 @@ profile:
   dep: mkn&${maiken_location}(${maiken_scm})[lib]
   main: test.cpp
 
+- name: test_module
+  dep: lang.pybind11
+  src: test_module.cpp
+  mod: python3.module lang.python3
+  out: test_module
+  install: .
+
 - name: format
   mod: |
-    clang.format{init{style: google, paths: .}}
+    clang.format{init{style: file, paths: .}}

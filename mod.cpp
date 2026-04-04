@@ -42,10 +42,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "mkn/kul/except.hpp"  // for Exception, KEXCEPT, KTHROW
 #include "mkn/kul/string.hpp"  // for String
 
-#include <memory>    // for shared_ptr, make_shared
 #include <string>    // for basic_string, string
 #include <vector>    // for vector
 #include <stdlib.h>  // for exit
+#include <stdexcept>
 
 namespace YAML {
 class Node;
@@ -54,54 +54,71 @@ class Node;
 namespace mkn {
 namespace python3 {
 
+kul::File find_python3() KTHROW(std::exception) {
+  std::string const HOME = kul::env::GET("PYTHON3_HOME");
+
+  kul::Dir dir;
+  if (!HOME.empty()) {
+#if defined(_WIN32)
+    dir = kul::Dir(HOME);
+    if (!dir) KEXCEPT(kul::Exception, "$PYTHON3_HOME does not exist");
+#else
+    dir = kul::Dir("bin", HOME);
+    if (!dir) KEXCEPT(kul::Exception, "$PYTHON3_HOME/bin does not exist");
+#endif
+  }
+
+  std::vector<std::string> bins{"python3", "python"};
+  for (auto const& bin : bins)
+    if (kul::env::WHICH(bin.c_str()))
+      return dir ? kul::File{bin, dir} : kul::env::WHERE(bin.c_str());
+
+#if defined(_WIN32)  // or fallback
+  std::vector<std::string> exes{"python3.exe", "python.exe"};
+  for (auto const& bin : exes)
+    if (kul::env::WHICH(bin.c_str()))
+      return dir ? kul::File{bin, dir} : kul::env::WHERE(bin.c_str());
+#endif
+
+  throw std::runtime_error("Could not find python!");
+}
+
+kul::cli::EnvVar python3_path_var(kul::File const& exe) {
+  return {"PATH", exe.dir().real(), kul::cli::EnvVarMode::PREP};
+}
+
+static inline kul::File const python_exe = find_python3();
+
+std::string pyexec_for_string(std::string const& cmd) {
+  auto const path_var = python3_path_var(python_exe);
+  kul::Process p(python_exe.real());
+  kul::ProcessCapture pc(p);
+  p << "-c" << ("\"" + cmd + "\"");
+  p.var(path_var.name(), path_var.toString());
+
+  try {
+    p.start();
+  } catch (kul::proc::ExitException const& ex) {
+    KLOG(ERR) << pc.outs();
+    KLOG(ERR) << pc.errs();
+    KERR << ex;
+    throw;
+  }
+  return kul::String::LINES(pc.outs())[0];  // DROP EOL
+}
+
 class ModuleMaker : public maiken::Module {
  public:
-  void init(maiken::Application& a, YAML::Node const& /*node*/) KTHROW(std::exception) override {
-    if (!kul::env::WHICH(PY.c_str())) PY = "python";
-    PYTHON = mkn::kul::env::GET("PYTHON");
-    if (!PYTHON.empty()) PY = PYTHON;
-#if defined(_WIN32)
-    if (PY.rfind(".exe") == std::string::npos) PY += ".exe";
-#endif
-    mkn::kul::Process p(PY);
-    mkn::kul::ProcessCapture pc(p);
-    HOME = mkn::kul::env::GET("PYTHON3_HOME");
-    if (!HOME.empty()) {
-#if defined(_WIN32)
-      bin = mkn::kul::Dir(HOME);
-      if (!bin) KEXCEPT(kul::Exception, "$PYTHON3_HOME does not exist");
-#else
-      bin = mkn::kul::Dir("bin", HOME);
-      if (!bin) KEXCEPT(kul::Exception, "$PYTHON3_HOME/bin does not exist");
-#endif
-      path_var =
-          std::make_shared<kul::cli::EnvVar>("PATH", bin.real(), mkn::kul::cli::EnvVarMode::PREP);
-      mkn::kul::env::SET(path_var->name(), path_var->toString().c_str());
-      p.var(path_var->name(), path_var->toString());
-    };
-
-    auto const extension =
-        pyexec_for_string("\"import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))\"");
-
-    a.m_cInfo.lib_ext = mkn::kul::String::LINES(extension)[0];  // drop EOL
-    a.m_cInfo.lib_prefix = "";
-    a.mode(maiken::compiler::Mode::SHAR);
-  }
-
- private:
-  std::string pyexec_for_string(std::string const& cmd) {
-    mkn::kul::Process p(PY);
-    mkn::kul::ProcessCapture pc(p);
-    p << "-c" << cmd;
-    p.start();
-    return pc.outs();
-  }
-
-  std::string HOME, PY = "python3", PYTHON, PY_CONFIG = "python-config",
-                    PY3_CONFIG = "python3-config", PATH = mkn::kul::env::GET("PATH");
-  mkn::kul::Dir bin;
-  std::shared_ptr<kul::cli::EnvVar> path_var;
+  void init(maiken::Application& a, YAML::Node const& /*node*/) KTHROW(std::exception) override;
 };
+
+void ModuleMaker::init(maiken::Application& a, YAML::Node const& /*node*/) KTHROW(std::exception) {
+  auto const cmd = "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))";
+  a.m_cInfo.lib_ext = pyexec_for_string(cmd);
+  a.m_cInfo.lib_prefix = "";
+  a.mode(maiken::compiler::Mode::SHAR);
+}
+
 }  // namespace python3
 }  // namespace mkn
 
