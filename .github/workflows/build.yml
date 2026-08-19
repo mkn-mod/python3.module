@@ -73,6 +73,6 @@ jobs:
         set -ex
         rm /bin/link
         $CURL_GET -o mkn.exe ${PATH_GET}/mkn.exe
-        KLOG=3 ./mkn clean build run -dtKOa "-EHsc -std:c++20"
-        KLOG=3 ./mkn clean build -dtKOa "-std:c++20 -EHsc" -p test_module
+        KLOG=3 ./mkn clean build run -dtKOa "-EHsc -std:c++20 -DYAML_CPP_STATIC_DEFINE"
+        KLOG=3 ./mkn clean build -dtKOa "-std:c++20 -EHsc -DYAML_CPP_STATIC_DEFINE" -p test_module
         python3 -c "import test_module as tm; tm.lol()"
