@@ -22,6 +22,7 @@ profile:
   mod: python3.module lang.python3
   out: test_module
   install: .
+  mode: shared
 
 - name: format
   mod: |
