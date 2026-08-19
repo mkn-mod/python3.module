@@ -17,7 +17,7 @@ profile:
     win_static: -DYAML_CPP_STATIC_DEFINE
 
 - name: test_module
-  dep: lang.pybind11
+  dep: lang.pybind11 parse.yaml[lib]
   src: test_module.cpp
   mod: python3.module lang.python3
   out: test_module
