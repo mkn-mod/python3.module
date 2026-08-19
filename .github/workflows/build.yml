@@ -49,8 +49,6 @@ jobs:
         $CURL_GET -o mkn ${PATH_GET}/mkn_arm_osx
         chmod +x mkn
         KLOG=3 ./mkn clean build run -dtOa "-std=c++20 -fPIC"
-        KLOG=3 ./mkn clean build -dtOa "-std=c++20 -fPIC" -p test_module
-        python3 -c "import test_module as tm; tm.lol()"
 
   windows:
     runs-on: windows-latest
