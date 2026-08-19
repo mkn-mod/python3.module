@@ -44,14 +44,12 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         architecture: arm64
-    - env:
-        MKN_PYTHON_LIB_EMBED: 1
-      run: |
+    - run: |
         set -ex
         $CURL_GET -o mkn ${PATH_GET}/mkn_arm_osx
         chmod +x mkn
-        KLOG=3 ./mkn clean build run -dtKOa "-std=c++20 -fPIC"
-        KLOG=3 ./mkn clean build -tOa "-std=c++20 -fPIC" -p test_module
+        KLOG=3 ./mkn clean build run -dtOa "-std=c++20 -fPIC"
+        KLOG=3 ./mkn clean build -dtOa "-std=c++20 -fPIC" -p test_module
         python3 -c "import test_module as tm; tm.lol()"
 
   windows:
@@ -76,5 +74,5 @@ jobs:
         rm /bin/link
         $CURL_GET -o mkn.exe ${PATH_GET}/mkn.exe
         KLOG=3 ./mkn clean build run -dtKOa "-EHsc -std:c++20"
-        KLOG=3 ./mkn clean build -tOa "-std:c++20 -EHsc" -p test_module
+        KLOG=3 ./mkn clean build -dtKOa "-std:c++20 -EHsc" -p test_module
         python3 -c "import test_module as tm; tm.lol()"
