@@ -1,9 +1,6 @@
 
 name: python3.module
 version: master
-property:
-    maiken_location: ${MKN_HOME}/app/mkn/${version}
-    maiken_scm: https://github.com/mkn/mkn
 
 parent: base
 src: mod.cpp
@@ -11,15 +8,10 @@ mode: shared
 
 profile:
 - name: base
-  dep: mkn&${maiken_location}(${maiken_scm})[mod]
+  dep: mkn.mod
   if_arg:
-      win_shared: -DYAML_CPP_DLL
+      win_static: -DYAML_CPP_STATIC_DEFINE
       shared: -DMKN_KUL_SHARED
-
-- name: test
-  parent: base
-  dep: mkn&${maiken_location}(${maiken_scm})[lib]
-  main: test.cpp
 
 - name: test_module
   dep: lang.pybind11

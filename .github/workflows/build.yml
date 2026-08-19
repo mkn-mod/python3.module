@@ -1,3 +1,4 @@
+
 name: build
 
 concurrency:
@@ -27,6 +28,7 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
+        architecture: x64
     - run: |
         set -ex
         $CURL_GET -o mkn ${PATH_GET}/mkn_nix
@@ -45,12 +47,14 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
+        architecture: x64
     - run: |
         set -ex
         $CURL_GET -o mkn ${PATH_GET}/mkn_arm_osx
         chmod +x mkn
         KLOG=3 ./mkn clean build run -dtOa "-std=c++20 -fPIC"
-        KLOG=3 ./mkn clean build run -dtOa "-std=c++20 -fPIC" -p test
+        KLOG=3 ./mkn clean build -dtOa "-std=c++20 -fPIC" -p test_module
+        python3 -c "import test_module as tm; tm.lol()"
 
   windows:
     runs-on: windows-latest
@@ -62,7 +66,10 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
+        architecture: x64
     - uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: amd64
     - env:
         MKN_CL_PREFERRED: 1
       shell: bash
@@ -73,3 +80,4 @@ jobs:
         KLOG=3 ./mkn clean build run -dtOa "-EHsc -std:c++20"
         KLOG=3 ./mkn clean build run -dtOp test -a "-EHsc -std:c++20"
         KLOG=3 ./mkn clean build -dtOa "-std:c++20 -EHsc" -p test_module
+        python3 -c "import test_module as tm; tm.lol()"
