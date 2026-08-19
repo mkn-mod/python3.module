@@ -12,7 +12,6 @@ on:
     branches: [ master ]
 
 env:
-  MKN_LIB_LINK_LIB: 1
   MKN_KUL_GIT_CO: --depth 1
   CURL_GET: curl -fL --retry 3 --retry-delay 2
   PATH_GET: https://github.com/mkn/mkn/releases/download/latest
