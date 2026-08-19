@@ -28,19 +28,16 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include "maiken/module/init.hpp"  // IWYU pragma: keep
-
-#include "maiken/app.hpp"       // for Application
-#include "maiken/compiler.hpp"  // for CompilationInfo, Mode
+#include "mkn/mod/init.hpp"  // IWYU pragma: keep
 
 #include "mkn/kul/os.hpp"      // for Dir, WHICH, PushDir
-#include "mkn/kul/cli.hpp"     // for EnvVar, EnvVarMode
-#include "mkn/kul/env.hpp"     // for GET, SET
+#include "mkn/kul/env.hpp"     // for Var, Var::Mode, GET, SET
+#include "mkn/kul/dbg.hpp"     // for TRACING
 #include "mkn/kul/defs.hpp"    // for MKN_KUL_PUBLISH
 #include "mkn/kul/proc.hpp"    // for Process, ProcessCapture, AProcess
-#include "maiken/project.hpp"  // for Project
 #include "mkn/kul/except.hpp"  // for Exception, KEXCEPT, KTHROW
 #include "mkn/kul/string.hpp"  // for String
+#include "mkn/kul/log.hpp"     // for KOUT, KLOG, KERR
 
 #include <string>    // for basic_string, string
 #include <vector>    // for vector
@@ -51,8 +48,7 @@ namespace YAML {
 class Node;
 }
 
-namespace mkn {
-namespace python3 {
+namespace mkn::python3 {
 
 kul::File find_python3() KTHROW(std::exception) {
   std::string const HOME = kul::env::GET("PYTHON3_HOME");
@@ -83,8 +79,8 @@ kul::File find_python3() KTHROW(std::exception) {
   throw std::runtime_error("Could not find python!");
 }
 
-kul::cli::EnvVar python3_path_var(kul::File const& exe) {
-  return {"PATH", exe.dir().real(), kul::cli::EnvVarMode::PREP};
+kul::env::Var python3_path_var(kul::File const& exe) {
+  return {"PATH", exe.dir().real(), kul::env::Var::Mode::PREP};
 }
 
 static inline kul::File const python_exe = find_python3();
@@ -110,23 +106,26 @@ std::string pyexec_for_string(std::string const& cmd) {
   return ret;
 }
 
-class ModuleMaker : public maiken::Module {
+class ModuleMaker : public mkn::mod::Module {
  public:
-  void init(maiken::Application& a, YAML::Node const& /*node*/) KTHROW(std::exception) override;
+  void init(mkn::mod::Context& ctx, YAML::Node const& /*node*/) KTHROW(std::exception) override;
 };
 
-void ModuleMaker::init(maiken::Application& a, YAML::Node const& /*node*/) KTHROW(std::exception) {
+void ModuleMaker::init(mkn::mod::Context& ctx, YAML::Node const& /*node*/) KTHROW(std::exception) {
+  MKN_KUL_DBG_FUNC_ENTER;
+
   auto const cmd = "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))";
-  a.m_cInfo.lib_ext = pyexec_for_string(cmd);
-  a.m_cInfo.lib_prefix = "";
-  a.mode(maiken::compiler::Mode::SHAR);
+  auto info = ctx.state().compileEnv.compilationInfo;
+  info.lib_ext = pyexec_for_string(cmd);
+  info.lib_prefix = "";
+  ctx.compilerState().add(mkn::mod::CompilationInfoInput{info});
+  ctx.compilerState().add(mkn::mod::BuildModeInput{mkn::mod::Mode::SHAR});
 }
 
-}  // namespace python3
-}  // namespace mkn
+}  // namespace mkn::python3
 
-extern "C" MKN_KUL_PUBLISH maiken::Module* maiken_module_construct() {
+extern "C" MKN_KUL_PUBLISH mkn::mod::Module* maiken_module_construct() {
   return new mkn::python3::ModuleMaker;
 }
 
-extern "C" MKN_KUL_PUBLISH void maiken_module_destruct(maiken::Module* p) { delete p; }
+extern "C" MKN_KUL_PUBLISH void maiken_module_destruct(mkn::mod::Module* p) { delete p; }

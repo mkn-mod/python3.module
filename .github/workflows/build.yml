@@ -1,3 +1,4 @@
+
 name: build
 
 concurrency:
@@ -11,7 +12,6 @@ on:
     branches: [ master ]
 
 env:
-  MKN_LIB_LINK_LIB: 1
   MKN_KUL_GIT_CO: --depth 1
   CURL_GET: curl -fL --retry 3 --retry-delay 2
   PATH_GET: https://github.com/mkn/mkn/releases/download/latest
@@ -27,13 +27,11 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
+        architecture: x64
     - run: |
-        set -ex
         $CURL_GET -o mkn ${PATH_GET}/mkn_nix
         chmod +x mkn
-        KLOG=3 ./mkn clean build run -dtOa "-std=c++20 -fPIC"
-        KLOG=3 ./mkn clean build -dtOa "-std=c++20 -fPIC" -p test_module
-        python3 -c "import test_module as tm; tm.lol()"
+        PATH=$PWD:$PATH ./res/ci/linux.sh
 
   macos:
     runs-on: macos-latest
@@ -45,12 +43,12 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
+        architecture: arm64
     - run: |
         set -ex
         $CURL_GET -o mkn ${PATH_GET}/mkn_arm_osx
         chmod +x mkn
         KLOG=3 ./mkn clean build run -dtOa "-std=c++20 -fPIC"
-        KLOG=3 ./mkn clean build run -dtOa "-std=c++20 -fPIC" -p test
 
   windows:
     runs-on: windows-latest
@@ -62,7 +60,10 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
+        architecture: x64
     - uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: amd64
     - env:
         MKN_CL_PREFERRED: 1
       shell: bash
@@ -70,6 +71,6 @@ jobs:
         set -ex
         rm /bin/link
         $CURL_GET -o mkn.exe ${PATH_GET}/mkn.exe
-        KLOG=3 ./mkn clean build run -dtOa "-EHsc -std:c++20"
-        KLOG=3 ./mkn clean build run -dtOp test -a "-EHsc -std:c++20"
-        KLOG=3 ./mkn clean build -dtOa "-std:c++20 -EHsc" -p test_module
+        KLOG=3 ./mkn clean build run -dtKOa "-EHsc -std:c++20 -DYAML_CPP_STATIC_DEFINE"
+        KLOG=3 ./mkn clean build -dtKOa "-std:c++20 -EHsc -DYAML_CPP_STATIC_DEFINE" -p test_module
+        python3 -c "import test_module as tm; tm.lol()"
