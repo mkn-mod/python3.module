@@ -44,7 +44,9 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         architecture: arm64
-    - run: |
+    - env:
+        MKN_PYTHON_LIB_EMBED: 1
+      run: |
         set -ex
         $CURL_GET -o mkn ${PATH_GET}/mkn_arm_osx
         chmod +x mkn
