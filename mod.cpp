@@ -44,9 +44,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>  // for exit
 #include <stdexcept>
 
-namespace YAML {
-class Node;
-}
 
 namespace mkn::python3 {
 
@@ -108,10 +105,10 @@ std::string pyexec_for_string(std::string const& cmd) {
 
 class ModuleMaker : public mkn::mod::Module {
  public:
-  void init(mkn::mod::Context& ctx, YAML::Node const& /*node*/) KTHROW(std::exception) override;
+  void init(mkn::mod::Context& ctx, mkn::mod::Node const& /*node*/) KTHROW(std::exception) override;
 };
 
-void ModuleMaker::init(mkn::mod::Context& ctx, YAML::Node const& /*node*/) KTHROW(std::exception) {
+void ModuleMaker::init(mkn::mod::Context& ctx, mkn::mod::Node const& /*node*/) KTHROW(std::exception) {
   MKN_KUL_DBG_FUNC_ENTER;
 
   auto const cmd = "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))";
