@@ -3,7 +3,7 @@ name: python3.module
 property:
   # dependency versions: master on master (not the default branch: mkn.mod's is
   #  the rolling latest, whose mkn.kul differs from a master project's)
-  mkn.mod.version: master
+  mkn.mod.version: latest
 version: master
 
 parent: base
@@ -19,11 +19,11 @@ profile:
 - name: test_module
   dep: lang.pybind11
   src: test_module.cpp
-  mod: python3.module#master lang.python3#master
+  mod: python3.module#latest lang.python3#latest
   out: test_module
   install: .
   mode: shared
 
 - name: format
   mod: |
-    clang.format#master{init{style: file, paths: .}}
+    clang.format#latest{init{style: file, paths: .}}
