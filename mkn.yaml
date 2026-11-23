@@ -24,7 +24,7 @@ profile:
 - name: test_module
   dep: lang.pybind11
   src: test_module.cpp
-  mod: python3.module lang.python3
+  mod: python3.module#master lang.python3#master
   out: test_module
   install: .
   mode: shared
@@ -33,4 +33,4 @@ profile:
 
 - name: format
   mod: |
-    clang.format{init{style: file, paths: .}}
+    clang.format#master{init{style: file, paths: .}}
