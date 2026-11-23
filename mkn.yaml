@@ -1,5 +1,10 @@
 
 name: python3.module
+property:
+  # dependency versions: master on master (not the default branch: mkn.mod's and parse.yaml's is
+  #  the rolling latest, whose mkn.kul differs from a master project's)
+  mkn.mod.version: master
+  parse.yaml.version: master
 version: master
 
 parent: base
@@ -8,10 +13,10 @@ mode: shared
 
 profile:
 - name: base
-  dep: mkn.mod
+  dep: mkn.mod#${mkn.mod.version}
   if_dep:
-    bsd: parse.yaml[lib]
-    win: parse.yaml[lib]
+    bsd: parse.yaml#${parse.yaml.version}[lib]
+    win: parse.yaml#${parse.yaml.version}[lib]
   if_arg:
     shared: -DMKN_KUL_SHARED
     win: -DYAML_CPP_STATIC_DEFINE
@@ -19,7 +24,7 @@ profile:
 - name: test_module
   dep: lang.pybind11
   src: test_module.cpp
-  mod: python3.module lang.python3
+  mod: python3.module#master lang.python3#master
   out: test_module
   install: .
   mode: shared
@@ -28,4 +33,4 @@ profile:
 
 - name: format
   mod: |
-    clang.format{init{style: file, paths: .}}
+    clang.format#master{init{style: file, paths: .}}
